@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial callerId="+14155550100" timeout="20" answerOnBridge="true">
+    <Number>+14155550123</Number>
+    <Sip>sip:agent@example.com</Sip>
+  </Dial>
+</Response>

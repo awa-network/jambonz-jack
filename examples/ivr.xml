@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice" language="en-US">Thanks for calling. Press 1 for sales or 2 for support.</Say>
+  <Gather input="dtmf speech" action="/menu" timeout="8" numDigits="1" finishOnKey="#">
+    <Say language="en-US">Say sales or support, or press a digit now.</Say>
+  </Gather>
+  <Redirect>/fallback</Redirect>
+</Response>

@@ -1,0 +1,28 @@
+{
+  "name": "jambonz-jack",
+  "version": "0.1.4",
+  "description": "Jambonz Application Compatibility Kit. Run TwiML and LaML voice applications on jambonz.",
+  "author": "AWA Development <dev@awa.network> (https://awa.network)",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "bin": {
+    "twiml-to-jambonz": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "lint": "node --check src/*.js test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "jambonz",
+    "twiml",
+    "laml",
+    "cxml",
+    "twilio",
+    "signalwire"
+  ],
+  "license": "MIT"
+}
