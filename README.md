@@ -86,6 +86,39 @@ Runtime flow:
 
 This is stateless: the next target URL and method are carried in the encoded descriptor. For production you can replace this with signed descriptors, but unsigned base64url is a good development default and easy to inspect.
 
+## HTTP endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Monitoring endpoint with service status, package version, uptime, and Node.js runtime version. |
+| `GET` | `/healthz` | Minimal health probe returning `{ "ok": true }`. Useful for simple container checks. |
+| `POST` | `/bridge?target=...` | Fetches the encoded TwiML/LaML/cXML target, forwards call parameters, converts the XML response to jambonz JSON, and rewrites supported callbacks through the bridge. |
+| `POST` | `/convert` | Converts a raw XML voice response in the request body to jambonz JSON. |
+| `POST` | `/twiml` | Alias for `/convert`, intended for Twilio-oriented callers. |
+| `POST` | `/laml` | Alias for `/convert`, intended for SignalWire LaML callers. |
+| `POST` | `/cxml` | Alias for `/convert`, intended for SignalWire cXML callers. |
+
+Example health response:
+
+```json
+{
+  "ok": true,
+  "status": "ok",
+  "service": "jambonz-jack",
+  "version": "0.1.4",
+  "uptimeSeconds": 42,
+  "node": "v22.16.0"
+}
+```
+
+Example lightweight probe response from `/healthz`:
+
+```json
+{
+  "ok": true
+}
+```
+
 ## Container
 
 ```sh

@@ -1,6 +1,6 @@
 {
   "name": "jambonz-jack",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Jambonz Application Compatibility Kit. Run TwiML and LaML voice applications on jambonz.",
   "author": "AWA Development <dev@awa.network> (https://awa.network)",
   "type": "commonjs",

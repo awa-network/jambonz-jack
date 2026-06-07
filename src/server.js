@@ -1,6 +1,7 @@
 'use strict';
 
 const http = require('node:http');
+const packageInfo = require('../package.json');
 const { decodeTarget, fetchAndConvertTarget } = require('./bridge');
 const { convertVoiceXml } = require('./converter');
 
@@ -26,6 +27,9 @@ function createServer() {
     try {
       if (req.method === 'GET' && req.url === '/healthz') {
         return sendJson(res, 200, { ok: true });
+      }
+      if (req.method === 'GET' && req.url === '/health') {
+        return sendJson(res, 200, healthPayload());
       }
       if (req.method === 'POST' && requestUrl.pathname === '/bridge') {
         const rawBody = await readBody(req, MAX_XML_BYTES);
@@ -66,6 +70,17 @@ function createServer() {
       });
     }
   });
+}
+
+function healthPayload() {
+  return {
+    ok: true,
+    status: 'ok',
+    service: packageInfo.name,
+    version: packageInfo.version,
+    uptimeSeconds: Math.floor(process.uptime()),
+    node: process.version
+  };
 }
 
 function errorStatus(err) {
@@ -191,5 +206,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  createServer
+  createServer,
+  healthPayload
 };

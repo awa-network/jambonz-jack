@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const { after, test } = require('node:test');
+const packageInfo = require('../package.json');
 const { decodeTarget, encodeTarget, fetchAndConvertTarget, makeBridgeTargetUrl } = require('../src');
 const { createServer } = require('../src/server');
 
@@ -96,4 +97,22 @@ test('server returns 502 when upstream TwiML fetch fails', async () => {
     if (previousAllowPrivateTargets === undefined) delete process.env.ALLOW_PRIVATE_TARGETS;
     else process.env.ALLOW_PRIVATE_TARGETS = previousAllowPrivateTargets;
   }
+});
+
+test('server exposes health and version information', async () => {
+  const server = createServer();
+  servers.push(server);
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+
+  const res = await fetch(`http://127.0.0.1:${port}/health`);
+  const body = await res.json();
+
+  assert.equal(res.status, 200);
+  assert.equal(body.ok, true);
+  assert.equal(body.status, 'ok');
+  assert.equal(body.service, packageInfo.name);
+  assert.equal(body.version, packageInfo.version);
+  assert.equal(typeof body.uptimeSeconds, 'number');
+  assert.match(body.node, /^v\d+\./);
 });
