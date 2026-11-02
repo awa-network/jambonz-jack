@@ -3,7 +3,7 @@
 This prepares JACK for an independent Claude Code security review. It does not
 claim that Claude Code has reviewed or approved the repository.
 
-Read `AGENTS.md`, `CLAUDE.md`, the [mapping](mapping.md), and the
+Read `AGENTS.md` when present, `CLAUDE.md`, the [mapping](mapping.md), and the
 [November 2026 maintenance report](security-maintenance-2026-11.md). Historical
 [review](review.md) and [follow-up](review-followup.md) findings are context,
 not proof that a boundary is secure in the current revision.
@@ -72,13 +72,17 @@ npm test
 npm run lint
 npm run audit
 docker build --pull --platform linux/amd64 -t jambonz-jack:ci-test .
+docker build --target test --platform linux/amd64 -t jambonz-jack:runtime-tests .
 docker run --rm --platform linux/amd64 --network none --read-only \
   --cap-drop ALL --security-opt no-new-privileges \
-  --mount "type=bind,src=$PWD/test,dst=/app/test,readonly" \
-  jambonz-jack:ci-test node --test
+  jambonz-jack:runtime-tests node --test
 docker scout cves --exit-code local://jambonz-jack:ci-test
 ```
 
 Record the reviewed commit, runtime, image digest, advisory/scan date, commands,
 results, and coverage gaps. Do not label a clean dependency scan a complete
 security review. Do not run unbounded exploits or test third-party systems.
+
+The `test` stage adds only the test suite to the shared runtime layers. The
+default `final` stage publishes the runtime without tests. This works when a
+CI runner's Docker daemon cannot see the checkout's filesystem paths.

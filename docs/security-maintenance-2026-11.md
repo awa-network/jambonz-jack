@@ -1,6 +1,6 @@
 # Security maintenance: November 2026
 
-Date: 2026-11-02. Source baseline: `994d30f`. Release: `v0.1.6`.
+Date: 2026-11-02. Source baseline: `994d30f`. Release: `v0.1.7`.
 This records dependency/runtime CVE maintenance and local regression testing;
 an independent Claude Code review and live provider testing remain outstanding.
 
@@ -54,14 +54,22 @@ Final runtime inventory:
 - Clean `npm ci --ignore-scripts` on the pinned Node 22.23.4 image, lint and audit.
 - `npm run audit`: zero vulnerabilities, including development dependencies.
 - `docker build --pull --platform linux/amd64 -t jambonz-jack:ci-test .`: passes.
-- All 57 tests pass against the actual amd64 scratch image, mounting only tests
-  and using `--network none --read-only --cap-drop ALL` and
+- All 57 tests pass against the amd64 scratch runtime with only the test suite
+  added in the `test` build stage, using `--network none --read-only --cap-drop ALL` and
   `--security-opt no-new-privileges`.
 - Runtime checks confirm UID 1000, Node 22.23.4, the four OS package records,
   and absence of shell, apk, npm, npx and runtime node_modules.
 - CI YAML parses; every shell fragment passes `sh -n`.
 - Final-image scans and vendor disposition are recorded above. Repeat scans on
   the published digest, since advisory databases change independently of code.
+
+The first release attempt, `v0.1.6` at `47a533c`, passed GitLab's Node tests but
+failed to publish the Docker image: its test bind mount referred to a checkout
+path unavailable to the runner's separate Docker daemon. The corrected `test`
+stage avoids host bind mounts and shares the final runtime layers; the default
+`final` stage omits tests. The earlier tag is retained, and `v0.1.7` contains the
+runner correction. The configured public GitHub export had already succeeded
+for the earlier tag.
 
 The development host's older Node can still execute the suite, but it is no
 longer an advertised deployment runtime. The pinned container is the release

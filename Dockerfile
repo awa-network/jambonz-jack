@@ -13,7 +13,7 @@ RUN mkdir -p /runtime-metadata/lib/apk/db && \
     awk 'BEGIN { RS=""; ORS="\n\n" } /\nP:(musl|libgcc|libstdc\+\+|ca-certificates-bundle)\n/ { print }' \
       /lib/apk/db/installed > /runtime-metadata/lib/apk/db/installed
 
-FROM scratch
+FROM scratch AS app
 
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
@@ -36,3 +36,10 @@ USER 1000:1000
 EXPOSE 3000
 
 CMD ["node", "src/server.js"]
+
+# Tests share the exact runtime layers without requiring daemon-host bind mounts.
+FROM app AS test
+COPY --chown=1000:1000 test ./test
+
+# Keep the default published image free of the test suite.
+FROM app AS final

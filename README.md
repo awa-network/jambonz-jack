@@ -103,7 +103,7 @@ Example health response:
   "ok": true,
   "status": "ok",
   "service": "jambonz-jack",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "uptimeSeconds": 42,
   "node": "v22.23.4"
 }
