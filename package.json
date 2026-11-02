@@ -1,6 +1,6 @@
 {
   "name": "jambonz-jack",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Jambonz Application Compatibility Kit. Run TwiML and LaML voice applications on jambonz.",
   "author": "AWA Development <dev@awa.network> (https://awa.network)",
   "type": "commonjs",
@@ -11,10 +11,12 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test",
-    "lint": "node --check src/*.js test/*.test.js"
+    "audit": "npm audit --audit-level=moderate",
+    "lint": "eslint . --max-warnings=0 && prettier --check 'src/**/*.js' 'test/**/*.js' eslint.config.js",
+    "format": "prettier --write 'src/**/*.js' 'test/**/*.js' eslint.config.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "keywords": [
     "jambonz",
@@ -24,5 +26,14 @@
     "twilio",
     "signalwire"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.9.10"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  }
 }

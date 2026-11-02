@@ -1,5 +1,9 @@
 .env
+.env.*
 .git
+.github
+.githubignore
+.gitlab-ci.yml
 node_modules
 npm-debug.log*
 coverage

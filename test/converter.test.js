@@ -29,31 +29,38 @@ test('strips Twilio say voice overrides so jambonz app defaults apply', () => {
     </Response>
   `);
 
-  assert.deepEqual(result.jambonz, [{
-    verb: 'say',
-    text: 'Hello'
-  }]);
+  assert.deepEqual(result.jambonz, [
+    {
+      verb: 'say',
+      text: 'Hello'
+    }
+  ]);
 });
 
 test('converts gather with nested prompt and speech recognizer hints', () => {
-  const result = convertVoiceXml(`
+  const result = convertVoiceXml(
+    `
     <Response>
       <Gather input="dtmf speech" action="/collect" timeout="8" numDigits="1" finishOnKey="#" hints="sales,support" language="en-US">
         <Say>Choose sales or support</Say>
       </Gather>
     </Response>
-  `, { defaults: { recognizerVendor: 'google' } });
+  `,
+    { defaults: { recognizerVendor: 'google' } }
+  );
 
-  assert.deepEqual(result.jambonz, [{
-    verb: 'gather',
-    actionHook: '/collect',
-    input: ['digits', 'speech'],
-    timeout: 8,
-    finishOnKey: '#',
-    numDigits: 1,
-    recognizer: { vendor: 'google', language: 'en-US', hints: ['sales', 'support'] },
-    say: { text: 'Choose sales or support' }
-  }]);
+  assert.deepEqual(result.jambonz, [
+    {
+      verb: 'gather',
+      actionHook: '/collect',
+      input: ['digits', 'speech'],
+      timeout: 8,
+      finishOnKey: '#',
+      numDigits: 1,
+      recognizer: { vendor: 'google', language: 'en-US', hints: ['sales', 'support'] },
+      say: { text: 'Choose sales or support' }
+    }
+  ]);
 });
 
 test('defaults gather input to digits for TwiML compatibility', () => {
@@ -63,12 +70,14 @@ test('defaults gather input to digits for TwiML compatibility', () => {
     </Response>
   `);
 
-  assert.deepEqual(result.jambonz, [{
-    verb: 'gather',
-    actionHook: '/collect',
-    input: ['digits'],
-    say: { text: 'Press one' }
-  }]);
+  assert.deepEqual(result.jambonz, [
+    {
+      verb: 'gather',
+      actionHook: '/collect',
+      input: ['digits'],
+      say: { text: 'Press one' }
+    }
+  ]);
 });
 
 test('converts dial targets', () => {
@@ -82,17 +91,19 @@ test('converts dial targets', () => {
     </Response>
   `);
 
-  assert.deepEqual(result.jambonz, [{
-    verb: 'dial',
-    callerId: '+14155550100',
-    answerOnBridge: true,
-    timeout: 20,
-    target: [
-      { type: 'phone', number: '+14155550123' },
-      { type: 'sip', sipUri: 'sip:agent@example.com' },
-      { type: 'user', name: 'agent-7' }
-    ]
-  }]);
+  assert.deepEqual(result.jambonz, [
+    {
+      verb: 'dial',
+      callerId: '+14155550100',
+      answerOnBridge: true,
+      timeout: 20,
+      target: [
+        { type: 'phone', number: '+14155550123' },
+        { type: 'sip', sipUri: 'sip:agent@example.com' },
+        { type: 'user', name: 'agent-7' }
+      ]
+    }
+  ]);
 });
 
 test('keeps warnings for approximate and unsupported mappings', () => {
@@ -110,10 +121,14 @@ test('keeps warnings for approximate and unsupported mappings', () => {
 });
 
 test('rejects unsafe entity declarations', () => {
-  assert.throws(() => convertVoiceXml(`
+  assert.throws(
+    () =>
+      convertVoiceXml(`
     <!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
     <Response><Say>&xxe;</Say></Response>
-  `), XmlParseError);
+  `),
+    XmlParseError
+  );
 });
 
 test('requires response root', () => {
@@ -121,16 +136,19 @@ test('requires response root', () => {
 });
 
 test('rewrites XML-returning callbacks when a bridge hook is supplied', () => {
-  const result = convertVoiceXml(`
+  const result = convertVoiceXml(
+    `
     <Response>
       <Gather action="/next" method="GET"><Say>Press 1</Say></Gather>
       <Redirect>/fallback</Redirect>
     </Response>
-  `, {
-    hooks: {
-      rewriteCallbackUrl: (value, meta) => `bridge:${meta.method}:${value}`
+  `,
+    {
+      hooks: {
+        rewriteCallbackUrl: (value, meta) => `bridge:${meta.method}:${value}`
+      }
     }
-  });
+  );
 
   assert.equal(result.jambonz[0].actionHook, 'bridge:GET:/next');
   assert.equal(result.jambonz[1].actionHook, 'bridge:POST:/fallback');

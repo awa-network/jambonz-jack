@@ -8,7 +8,7 @@ Repo, package, and container name: `jambonz-jack`.
 
 ## Overview
 
-JACK is a compatibility layer that enables existing Twilio and SignalWire voice applications to run on jambonz with minimal or no application changes.
+JACK is a compatibility layer for running supported Twilio and SignalWire voice flows on jambonz. Compatibility is partial; applications using unsupported verbs, status callbacks, or provider-specific semantics need adaptation and live-call validation.
 
 Rather than requiring a complete rewrite from TwiML/LaML XML to native jambonz JSON, JACK translates application requests and responses between the two ecosystems.
 
@@ -32,11 +32,11 @@ Examples include:
 
 This allows existing Twilio or SignalWire applications to execute on jambonz without requiring native jambonz application logic.
 
-### JACK Status
+### JACK Status (planned)
 
-JACK Status routes and translates jambonz events and call state changes into Twilio-compatible webhook callbacks.
+JACK Status is a planned component for routing jambonz events and call state changes into Twilio-compatible status webhooks. It is not implemented as a separate router or endpoint. The existing bridge forwards selected call parameters when requesting XML from upstream applications.
 
-Examples include:
+Planned event coverage includes:
 
 - Call status updates
 - Answered events
@@ -45,7 +45,7 @@ Examples include:
 - DTMF and gather results
 - Other supported callback payloads
 
-This enables existing webhook handlers and application backends to continue operating without modification.
+The aim is to preserve existing webhook handlers where the provider event contracts can be reproduced.
 
 ## Architecture
 
@@ -59,7 +59,7 @@ Twilio / SignalWire Application
       jambonz
         |
         v
-    JACK Status
+    JACK Status (planned)
         |
         v
 Twilio-Compatible Webhooks

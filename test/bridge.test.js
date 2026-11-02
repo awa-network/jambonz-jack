@@ -4,7 +4,12 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const { after, test } = require('node:test');
 const packageInfo = require('../package.json');
-const { decodeTarget, encodeTarget, fetchAndConvertTarget, makeBridgeTargetUrl } = require('../src');
+const {
+  decodeTarget,
+  encodeTarget,
+  fetchAndConvertTarget,
+  makeBridgeTargetUrl
+} = require('../src');
 const { createServer } = require('../src/server');
 
 const servers = [];
@@ -17,7 +22,10 @@ test('encodes bridge target descriptors as base64url JSON', () => {
   const encoded = encodeTarget({ url: 'https://example.com/voice', method: 'GET' });
   assert.deepEqual(decodeTarget(encoded), { url: 'https://example.com/voice', method: 'GET' });
   assert.equal(
-    makeBridgeTargetUrl({ url: 'https://example.com/voice', method: 'GET' }, 'https://bridge.example.com'),
+    makeBridgeTargetUrl(
+      { url: 'https://example.com/voice', method: 'GET' },
+      'https://bridge.example.com'
+    ),
     `https://bridge.example.com/bridge?target=${encoded}`
   );
 });
@@ -76,31 +84,24 @@ test('blocks private targets unless explicitly allowed', async () => {
 });
 
 test('server returns 502 when upstream TwiML fetch fails', async () => {
-  const previousAllowPrivateTargets = process.env.ALLOW_PRIVATE_TARGETS;
-  process.env.ALLOW_PRIVATE_TARGETS = 'true';
-  const server = createServer();
+  const server = createServer({ env: { ALLOW_PRIVATE_TARGETS: 'true' }, log() {} });
   servers.push(server);
-  try {
-    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const port = server.address().port;
-    const target = encodeTarget({ url: 'https://127.0.0.1:1/voice', method: 'POST' });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = server.address().port;
+  const target = encodeTarget({ url: 'https://127.0.0.1:1/voice', method: 'POST' });
 
-    const res = await fetch(`http://127.0.0.1:${port}/bridge?target=${target}`, {
-      method: 'POST'
-    });
-    const body = await res.json();
+  const res = await fetch(`http://127.0.0.1:${port}/bridge?target=${target}`, {
+    method: 'POST'
+  });
+  const body = await res.json();
 
-    assert.equal(res.status, 502);
-    assert.equal(body.error, 'UPSTREAM_FETCH_FAILED');
-    assert.equal(body.message, 'Failed to fetch TwiML target');
-  } finally {
-    if (previousAllowPrivateTargets === undefined) delete process.env.ALLOW_PRIVATE_TARGETS;
-    else process.env.ALLOW_PRIVATE_TARGETS = previousAllowPrivateTargets;
-  }
+  assert.equal(res.status, 502);
+  assert.equal(body.error, 'UPSTREAM_FETCH_FAILED');
+  assert.equal(body.message, 'Failed to fetch TwiML target');
 });
 
 test('server exposes health and version information', async () => {
-  const server = createServer();
+  const server = createServer({ env: {}, log() {} });
   servers.push(server);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const port = server.address().port;

@@ -1,7 +1,12 @@
 'use strict';
 
 const { convertVoiceXml } = require('./converter');
-const { decodeTarget, encodeTarget, fetchAndConvertTarget, makeBridgeTargetUrl } = require('./bridge');
+const {
+  decodeTarget,
+  encodeTarget,
+  fetchAndConvertTarget,
+  makeBridgeTargetUrl
+} = require('./bridge');
 const { XmlParseError } = require('./xml');
 
 module.exports = {

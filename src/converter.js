@@ -1,11 +1,11 @@
 'use strict';
 
 const { elementChildren, parseXml, textContent } = require('./xml');
+const { DEFAULT_MAX_XML_BYTES } = require('./limits');
 
 const DEFAULT_OPTIONS = {
-  maxXmlBytes: 256 * 1024,
+  maxXmlBytes: DEFAULT_MAX_XML_BYTES,
   includeWarnings: true,
-  provider: 'auto',
   defaults: {},
   hooks: {}
 };
@@ -19,54 +19,62 @@ function convertVoiceXml(xml, options = {}) {
   };
   const root = parseXml(xml, { maxXmlBytes: config.maxXmlBytes });
   const context = { warnings: [], config };
-  const verbs = convertChildren(root, context, { nested: false });
+  const verbs = convertChildren(root, context);
   return {
     jambonz: verbs,
     warnings: config.includeWarnings ? context.warnings : []
   };
 }
 
-function convertChildren(node, context, state) {
+function convertChildren(node, context) {
   const verbs = [];
   for (const child of elementChildren(node)) {
-    const converted = convertNode(child, context, state);
+    const converted = convertNode(child, context);
     for (const verb of converted) verbs.push(verb);
   }
   return verbs;
 }
 
-function convertNode(node, context, state) {
+function convertNode(node, context) {
   const attrs = node.attributes || {};
   switch (node.name) {
     case 'Say':
-      return [compact({
-        verb: 'say',
-        text: textContent(node),
-        loop: integer(attrs.loop)
-      })];
+      return [
+        compact({
+          verb: 'say',
+          text: textContent(node),
+          loop: integer(attrs.loop)
+        })
+      ];
     case 'Play':
-      return [compact({
-        verb: 'play',
-        url: textContent(node),
-        loop: integer(attrs.loop),
-        timeoutSecs: integer(attrs.timeout)
-      })];
+      return [
+        compact({
+          verb: 'play',
+          url: textContent(node),
+          loop: integer(attrs.loop),
+          timeoutSecs: integer(attrs.timeout)
+        })
+      ];
     case 'Pause':
       return [compact({ verb: 'pause', length: integer(attrs.length) })];
     case 'Hangup':
       return [{ verb: 'hangup' }];
     case 'Reject':
-      return [compact({
-        verb: 'sip:decline',
-        status: attrs.reason === 'busy' ? 486 : 603,
-        reason: attrs.reason
-      })];
+      return [
+        compact({
+          verb: 'sip:decline',
+          status: attrs.reason === 'busy' ? 486 : 603,
+          reason: attrs.reason
+        })
+      ];
     case 'Redirect':
-      return [compact({
-        verb: 'redirect',
-        actionHook: callbackUrl(context, textContent(node), attrs.method || 'POST'),
-        method: attrs.method
-      })];
+      return [
+        compact({
+          verb: 'redirect',
+          actionHook: callbackUrl(context, textContent(node), attrs.method || 'POST'),
+          method: attrs.method
+        })
+      ];
     case 'Gather':
       return [convertGather(node, context)];
     case 'Dial':
@@ -74,12 +82,14 @@ function convertNode(node, context, state) {
     case 'Record':
       return [convertRecord(node, context)];
     case 'Enqueue':
-      return [compact({
-        verb: 'enqueue',
-        name: textContent(node),
-        actionHook: callbackUrl(context, attrs.action, attrs.method || 'POST'),
-        waitHook: callbackUrl(context, attrs.waitUrl, attrs.waitUrlMethod || 'POST')
-      })];
+      return [
+        compact({
+          verb: 'enqueue',
+          name: textContent(node),
+          actionHook: callbackUrl(context, attrs.action, attrs.method || 'POST'),
+          waitHook: callbackUrl(context, attrs.waitUrl, attrs.waitUrlMethod || 'POST')
+        })
+      ];
     case 'Leave':
       return [{ verb: 'leave' }];
     case 'Connect':
@@ -92,7 +102,9 @@ function convertNode(node, context, state) {
 
 function convertGather(node, context) {
   const attrs = node.attributes || {};
-  const nested = convertChildren(node, context, { nested: true }).filter((verb) => ['say', 'play', 'pause'].includes(verb.verb));
+  const nested = convertChildren(node, context).filter((verb) =>
+    ['say', 'play', 'pause'].includes(verb.verb)
+  );
   const gather = compact({
     verb: 'gather',
     actionHook: callbackUrl(context, attrs.action, attrs.method || 'POST'),
@@ -110,7 +122,12 @@ function convertGather(node, context) {
   for (const prompt of nested) {
     if (prompt.verb === 'say' && !gather.say) gather.say = withoutVerb(prompt);
     else if (prompt.verb === 'play' && !gather.play) gather.play = withoutVerb(prompt);
-    else warn(context, 'Gather', `Nested <${prompt.verb}> after first prompt cannot be represented exactly`);
+    else
+      warn(
+        context,
+        'Gather',
+        `Nested <${prompt.verb}> after first prompt cannot be represented exactly`
+      );
   }
 
   return gather;
@@ -124,11 +141,16 @@ function convertDial(node, context) {
 
   for (const child of elementChildren(node)) {
     const value = textContent(child);
-    if (child.name === 'Number') targets.push(compact({ type: 'phone', number: value, callerId: child.attributes.callerId }));
+    if (child.name === 'Number')
+      targets.push(compact({ type: 'phone', number: value, callerId: child.attributes.callerId }));
     else if (child.name === 'Sip') targets.push(compact({ type: 'sip', sipUri: value }));
     else if (child.name === 'Client') targets.push(compact({ type: 'user', name: value }));
     else if (child.name === 'Conference') {
-      warn(context, 'Conference', '<Dial><Conference> maps to jambonz conference, not dial target semantics');
+      warn(
+        context,
+        'Conference',
+        '<Dial><Conference> maps to jambonz conference, not dial target semantics'
+      );
       return compact({
         verb: 'conference',
         name: value,
@@ -154,7 +176,11 @@ function convertDial(node, context) {
 
 function convertRecord(node, context) {
   const attrs = node.attributes || {};
-  warn(context, 'Record', '<Record> is approximated with jambonz listen; provide a recorder websocket URL via defaults.recordingWsUrl');
+  warn(
+    context,
+    'Record',
+    '<Record> is approximated with jambonz listen; provide a recorder websocket URL via defaults.recordingWsUrl'
+  );
   return compact({
     verb: 'listen',
     url: attrs.recordingStatusCallback || context.config.defaults.recordingWsUrl,
@@ -169,17 +195,20 @@ function convertConnect(node, context) {
   const out = [];
   for (const child of elementChildren(node)) {
     if (child.name === 'Stream') {
-      out.push(compact({
-        verb: 'listen',
-        url: child.attributes.url,
-        mixType: 'mono',
-        bidirectionalAudio: { enabled: true }
-      }));
+      out.push(
+        compact({
+          verb: 'listen',
+          url: child.attributes.url,
+          mixType: 'mono',
+          bidirectionalAudio: { enabled: true }
+        })
+      );
     } else {
       warn(context, child.name, `<Connect><${child.name}> is not mapped`);
     }
   }
-  if (!out.length) warn(context, 'Connect', '<Connect> requires a supported nested noun such as <Stream>');
+  if (!out.length)
+    warn(context, 'Connect', '<Connect> requires a supported nested noun such as <Stream>');
   return out;
 }
 
@@ -195,7 +224,12 @@ function recognizer(attrs, context) {
   return compact({
     vendor: context.config.defaults.recognizerVendor,
     language: attrs.language || context.config.defaults.language,
-    hints: attrs.hints ? attrs.hints.split(',').map((hint) => hint.trim()).filter(Boolean) : undefined,
+    hints: attrs.hints
+      ? attrs.hints
+          .split(',')
+          .map((hint) => hint.trim())
+          .filter(Boolean)
+      : undefined,
     speechTimeout: attrs.speechTimeout
   });
 }
@@ -207,7 +241,11 @@ function callbackUrl(context, value, method) {
 }
 
 function directTextContent(node) {
-  return node.children.filter((child) => child.name === '#text').map((child) => child.text).join('').trim();
+  return node.children
+    .filter((child) => child.name === '#text')
+    .map((child) => child.text)
+    .join('')
+    .trim();
 }
 
 function withoutVerb(obj) {
@@ -242,12 +280,6 @@ function boolean(value) {
   if (value === undefined || value === '') return undefined;
   if (typeof value === 'boolean') return value;
   return ['true', '1', 'yes'].includes(String(value).toLowerCase());
-}
-
-function normalizeGender(value) {
-  if (!value) return undefined;
-  const gender = String(value).toUpperCase();
-  return ['MALE', 'FEMALE', 'NEUTRAL'].includes(gender) ? gender : undefined;
 }
 
 function warn(context, verb, message) {
